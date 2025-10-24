@@ -1,0 +1,64 @@
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-gemma-3-1b
+  namespace: shared-models
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gemma-server-1b
+  template:
+    metadata:
+      labels:
+        app: gemma-server-1b
+        component: inference-server
+        ai.gke.io/model: gemma-3-1b-it
+        ai.gke.io/inference-server: vllm
+        examples.ai.gke.io/source: user-guide
+    spec:
+      serviceAccountName: vllm-gemma-sa
+      containers:
+      - name: inference-server
+        image: docker.io/vllm/vllm-openai:v0.10.0
+        resources:
+          requests:
+            cpu: "2"
+            memory: "20Gi"
+            ephemeral-storage: "10Gi"
+            nvidia.com/gpu: "1"
+          limits:
+            cpu: "2"
+            memory: "20Gi"
+            ephemeral-storage: "10Gi"
+            nvidia.com/gpu: "1"
+        command: ["python3", "-m", "vllm.entrypoints.openai.api_server"]
+        args:
+        - --model=$(MODEL_ID)
+        - --tensor-parallel-size=1
+        - --host=0.0.0.0
+        - --port=8000
+        - --max-model-len=32768
+        - --max-num-seqs=4
+        env:
+        - name: LD_LIBRARY_PATH
+          value: ${LD_LIBRARY_PATH}:/usr/local/nvidia/lib64
+        - name: MODEL_ID
+          value: google/gemma-3-1b-it
+        - name: HUGGING_FACE_HUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: hf-secret
+              key: hf_api_token
+        volumeMounts:
+        - mountPath: /dev/shm
+          name: dshm
+      volumes:
+      - name: dshm
+        emptyDir:
+            medium: Memory
+      nodeSelector:
+        cloud.google.com/compute-class: gpu-l4
+      terminationGracePeriodSeconds: 20

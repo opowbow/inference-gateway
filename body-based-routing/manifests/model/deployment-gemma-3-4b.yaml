@@ -21,7 +21,6 @@ spec:
         ai.gke.io/inference-server: vllm
         examples.ai.gke.io/source: user-guide
     spec:
-      priorityClassName: vllm-high-priority
       serviceAccountName: vllm-gemma-sa
       containers:
       - name: inference-server

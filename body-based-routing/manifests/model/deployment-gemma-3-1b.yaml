@@ -60,5 +60,7 @@ spec:
         emptyDir:
             medium: Memory
       nodeSelector:
-        cloud.google.com/compute-class: gpu-l4
+        cloud.google.com/gke-accelerator: nvidia-l4
+        cloud.google.com/gke-gpu-driver-version: latest
+        cloud.google.com/gke-spot: "true"
       terminationGracePeriodSeconds: 20
